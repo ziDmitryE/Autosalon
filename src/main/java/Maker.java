@@ -1,3 +1,6 @@
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Maker {
 
     final private Shop shop;
@@ -8,28 +11,34 @@ public class Maker {
 
     private int carCount = 0;
     private int carSold = 0;
-    private int WAIT = 1000;
+    private final int WAIT = 1000;
 
-    public synchronized void makeCar() {
+    ReentrantLock lock = new ReentrantLock();
+    Condition condition = lock.newCondition();
+
+    public void makeCar() {
         try {
+            lock.lock();
             carCount++;
-            System.out.println("Производитель " + Thread.currentThread().getName() + " выпустил 1 авто\n"+
+            System.out.println("Производитель " + Thread.currentThread().getName() + " выпустил 1 авто\n" +
                     "всего произведено " + carCount + " авто");
             Thread.sleep(WAIT);
             shop.getCars().add(new Car());
-            notify();
+            condition.signal();
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            lock.unlock();
         }
     }
 
-    public synchronized void sellCar() {
-
+    public void sellCar() {
         try {
+            lock.lock();
             System.out.println(Thread.currentThread().getName() + " зашел в автосалон");
             while (shop.getCars().size() == 0) {
                 System.out.println("Машин нет");
-                wait();
+                condition.await();
             }
             Thread.sleep(WAIT);
             System.out.println(Thread.currentThread().getName() + " уехал на новеньком авто");
@@ -37,6 +46,8 @@ public class Maker {
             System.out.println("Кол-во проданных машин = " + carSold);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            lock.unlock();
         }
         shop.getCars().remove(0);
     }
