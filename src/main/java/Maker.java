@@ -9,9 +9,10 @@ public class Maker {
         this.shop = shop;
     }
 
-    private int carCount = 0;
-    private int carSold = 0;
-    private final int WAIT = 1000;
+    private static int carCount = 0;
+    private static int carSold = 0;
+    private static final int waitCarProduction = 1000;
+    private static final int waitCarRegistration = 1000;
 
     ReentrantLock lock = new ReentrantLock();
     Condition condition = lock.newCondition();
@@ -20,9 +21,9 @@ public class Maker {
         try {
             lock.lock();
             carCount++;
+            Thread.sleep(waitCarProduction);
             System.out.println("Производитель " + Thread.currentThread().getName() + " выпустил 1 авто\n" +
                     "всего произведено " + carCount + " авто");
-            Thread.sleep(WAIT);
             shop.getCars().add(new Car());
             condition.signal();
         } catch (InterruptedException e) {
@@ -40,7 +41,7 @@ public class Maker {
                 System.out.println("Машин нет");
                 condition.await();
             }
-            Thread.sleep(WAIT);
+            Thread.sleep(waitCarRegistration);
             System.out.println(Thread.currentThread().getName() + " уехал на новеньком авто");
             carSold++;
             System.out.println("Кол-во проданных машин = " + carSold);
